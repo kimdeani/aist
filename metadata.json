@@ -1,0 +1,6 @@
+{
+  "name": "READLOG — My Personal Book Space",
+  "description": "책 선정, 감상 기록, 독서 이력 관리, 리뷰가 유기적으로 연결되는 개인 독서 기록 공간",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
