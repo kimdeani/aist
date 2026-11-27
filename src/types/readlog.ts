@@ -2,12 +2,25 @@ export type Priority = '높음' | '보통' | '낮음';
 
 export type ReadingStatus = '읽기 전' | '읽는 중' | '완독';
 
-export type TabId = 'selection' | 'notes' | 'history' | 'review';
+export type TabId = 'selection' | 'notes' | 'history' | 'review' | 'explore';
 
 export type CoverTone = 'slate' | 'cobalt' | 'charcoal' | 'stone';
 
+export interface PublicProfile {
+  userId: string;
+  displayName: string;
+  bio: string;
+  isPublic: boolean;
+  bookCount: number;
+  completedCount: number;
+  reviewCount: number;
+}
+
 export interface Book {
   id: string;
+  ownerId?: string;
+  ownerName?: string;
+  isPublic?: boolean;
   title: string;
   author: string;
   category: string;
@@ -25,7 +38,11 @@ export interface Book {
 
 export interface ReadingNote {
   id: string;
+  ownerId?: string;
+  ownerName?: string;
+  isPublic?: boolean;
   bookId: string;
+  bookTitle?: string;
   page: number | null;
   quote: string;
   memo: string;
@@ -34,7 +51,12 @@ export interface ReadingNote {
 
 export interface BookReview {
   id: string;
+  ownerId?: string;
+  ownerName?: string;
+  isPublic?: boolean;
   bookId: string;
+  bookTitle?: string;
+  bookAuthor?: string;
   rating: number;
   summary: string;
   pros: string;

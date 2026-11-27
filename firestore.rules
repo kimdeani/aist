@@ -1,0 +1,336 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isValidUserPrivate(data, userId) {
+      return data.keys().hasAll(['uid', 'email', 'displayName', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['uid', 'email', 'displayName', 'createdAt', 'updatedAt'])
+        && data.uid is string
+        && isValidId(data.uid)
+        && data.uid == userId
+        && data.uid == request.auth.uid
+        && data.email is string
+        && data.email.size() >= 3
+        && data.email.size() <= 160
+        && data.displayName is string
+        && data.displayName.size() >= 1
+        && data.displayName.size() <= 50
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidPublicProfile(data, userId) {
+      return data.keys().hasAll([
+          'userId', 'displayName', 'bio', 'isPublic',
+          'bookCount', 'completedCount', 'reviewCount', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'userId', 'displayName', 'bio', 'isPublic',
+          'bookCount', 'completedCount', 'reviewCount', 'createdAt', 'updatedAt'
+        ])
+        && data.userId is string
+        && isValidId(data.userId)
+        && data.userId == userId
+        && data.userId == request.auth.uid
+        && data.displayName is string
+        && data.displayName.size() >= 1
+        && data.displayName.size() <= 50
+        && data.bio is string
+        && data.bio.size() <= 200
+        && data.isPublic is bool
+        && data.bookCount is int
+        && data.bookCount >= 0
+        && data.completedCount is int
+        && data.completedCount >= 0
+        && data.reviewCount is int
+        && data.reviewCount >= 0
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidBook(data) {
+      return data.keys().hasAll([
+          'ownerId', 'ownerName', 'isPublic', 'title', 'author', 'category',
+          'totalPages', 'reason', 'priority', 'coverTone', 'status',
+          'startDate', 'endDate', 'currentPage', 'createdDate', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerId', 'ownerName', 'isPublic', 'title', 'author', 'category',
+          'totalPages', 'reason', 'priority', 'coverTone', 'coverImage', 'status',
+          'startDate', 'endDate', 'currentPage', 'createdDate', 'createdAt', 'updatedAt'
+        ])
+        && data.ownerId is string
+        && isValidId(data.ownerId)
+        && data.ownerId == request.auth.uid
+        && data.ownerName is string
+        && data.ownerName.size() >= 1
+        && data.ownerName.size() <= 50
+        && data.isPublic is bool
+        && data.title is string
+        && data.title.size() >= 1
+        && data.title.size() <= 200
+        && data.author is string
+        && data.author.size() >= 1
+        && data.author.size() <= 120
+        && data.category is string
+        && data.category.size() <= 60
+        && data.totalPages is int
+        && data.totalPages >= 1
+        && data.totalPages <= 50000
+        && data.reason is string
+        && data.reason.size() <= 1000
+        && data.priority in ['높음', '보통', '낮음']
+        && data.coverTone in ['slate', 'cobalt', 'charcoal', 'stone']
+        && (!('coverImage' in data) || (data.coverImage is string && data.coverImage.size() <= 500))
+        && data.status in ['읽기 전', '읽는 중', '완독']
+        && data.startDate is string
+        && data.startDate.size() <= 20
+        && data.endDate is string
+        && data.endDate.size() <= 20
+        && data.currentPage is int
+        && data.currentPage >= 0
+        && data.currentPage <= data.totalPages
+        && data.createdDate is string
+        && data.createdDate.size() <= 20
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidReadingNote(data) {
+      return data.keys().hasAll([
+          'ownerId', 'ownerName', 'isPublic', 'bookId', 'bookTitle',
+          'quote', 'memo', 'createdDate', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerId', 'ownerName', 'isPublic', 'bookId', 'bookTitle',
+          'page', 'quote', 'memo', 'createdDate', 'createdAt', 'updatedAt'
+        ])
+        && data.ownerId is string
+        && isValidId(data.ownerId)
+        && data.ownerId == request.auth.uid
+        && data.ownerName is string
+        && data.ownerName.size() >= 1
+        && data.ownerName.size() <= 50
+        && data.isPublic is bool
+        && data.bookId is string
+        && isValidId(data.bookId)
+        && data.bookTitle is string
+        && data.bookTitle.size() >= 1
+        && data.bookTitle.size() <= 200
+        && (!('page' in data) || data.page == null || (data.page is int && data.page >= 0 && data.page <= 50000))
+        && data.quote is string
+        && data.quote.size() <= 2000
+        && data.memo is string
+        && data.memo.size() <= 4000
+        && (data.quote.size() > 0 || data.memo.size() > 0)
+        && data.createdDate is string
+        && data.createdDate.size() <= 20
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidBookReview(data) {
+      return data.keys().hasAll([
+          'ownerId', 'ownerName', 'isPublic', 'bookId', 'bookTitle', 'bookAuthor',
+          'rating', 'summary', 'pros', 'cons', 'finalThought',
+          'updatedDate', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerId', 'ownerName', 'isPublic', 'bookId', 'bookTitle', 'bookAuthor',
+          'rating', 'summary', 'pros', 'cons', 'finalThought',
+          'updatedDate', 'createdAt', 'updatedAt'
+        ])
+        && data.ownerId is string
+        && isValidId(data.ownerId)
+        && data.ownerId == request.auth.uid
+        && data.ownerName is string
+        && data.ownerName.size() >= 1
+        && data.ownerName.size() <= 50
+        && data.isPublic is bool
+        && data.bookId is string
+        && isValidId(data.bookId)
+        && data.bookTitle is string
+        && data.bookTitle.size() >= 1
+        && data.bookTitle.size() <= 200
+        && data.bookAuthor is string
+        && data.bookAuthor.size() >= 1
+        && data.bookAuthor.size() <= 120
+        && data.rating is int
+        && data.rating >= 1
+        && data.rating <= 5
+        && data.summary is string
+        && data.summary.size() >= 1
+        && data.summary.size() <= 300
+        && data.pros is string
+        && data.pros.size() <= 1500
+        && data.cons is string
+        && data.cons.size() <= 1500
+        && data.finalThought is string
+        && data.finalThought.size() >= 1
+        && data.finalThought.size() <= 5000
+        && data.updatedDate is string
+        && data.updatedDate.size() <= 20
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    match /users/{userId} {
+      allow get: if isSignedIn() && isValidId(userId) && request.auth.uid == userId;
+      allow list: if false;
+      allow create: if isVerifiedUser()
+        && isValidId(userId)
+        && request.auth.uid == userId
+        && isValidUserPrivate(incoming(), userId)
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isVerifiedUser()
+        && isValidId(userId)
+        && request.auth.uid == userId
+        && isValidUserPrivate(incoming(), userId)
+        && incoming().uid == existing().uid
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['email', 'displayName', 'updatedAt']);
+      allow delete: if false;
+    }
+
+    match /publicProfiles/{userId} {
+      allow get: if isValidId(userId) && (existing().isPublic == true || (isSignedIn() && request.auth.uid == userId));
+      allow list: if existing().isPublic == true || (isSignedIn() && existing().userId == request.auth.uid);
+      allow create: if isVerifiedUser()
+        && isValidId(userId)
+        && request.auth.uid == userId
+        && isValidPublicProfile(incoming(), userId)
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isVerifiedUser()
+        && isValidId(userId)
+        && request.auth.uid == userId
+        && isValidPublicProfile(incoming(), userId)
+        && incoming().userId == existing().userId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'displayName', 'bio', 'isPublic', 'bookCount', 'completedCount', 'reviewCount', 'updatedAt'
+        ]);
+      allow delete: if false;
+    }
+
+    match /books/{bookId} {
+      allow get: if isValidId(bookId) && (existing().isPublic == true || (isSignedIn() && existing().ownerId == request.auth.uid));
+      allow list: if existing().isPublic == true || (isSignedIn() && existing().ownerId == request.auth.uid);
+      allow create: if isVerifiedUser()
+        && isValidId(bookId)
+        && isValidBook(incoming())
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isVerifiedUser()
+        && isValidId(bookId)
+        && existing().ownerId == request.auth.uid
+        && isValidBook(incoming())
+        && incoming().ownerId == existing().ownerId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'title', 'author', 'category', 'totalPages', 'reason', 'priority',
+            'coverTone', 'coverImage', 'status', 'startDate', 'endDate', 'currentPage', 'updatedAt'
+          ])
+          || incoming().diff(existing()).affectedKeys().hasOnly(['isPublic', 'ownerName', 'updatedAt'])
+        );
+      allow delete: if isVerifiedUser()
+        && isValidId(bookId)
+        && existing().ownerId == request.auth.uid;
+    }
+
+    match /notes/{noteId} {
+      allow get: if isValidId(noteId) && (existing().isPublic == true || (isSignedIn() && existing().ownerId == request.auth.uid));
+      allow list: if existing().isPublic == true || (isSignedIn() && existing().ownerId == request.auth.uid);
+      allow create: if isVerifiedUser()
+        && isValidId(noteId)
+        && isValidReadingNote(incoming())
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && (
+          (exists(/databases/$(database)/documents/books/$(incoming().bookId))
+            && get(/databases/$(database)/documents/books/$(incoming().bookId)).data.ownerId == request.auth.uid)
+          || (existsAfter(/databases/$(database)/documents/books/$(incoming().bookId))
+            && getAfter(/databases/$(database)/documents/books/$(incoming().bookId)).data.ownerId == request.auth.uid)
+        );
+      allow update: if isVerifiedUser()
+        && isValidId(noteId)
+        && existing().ownerId == request.auth.uid
+        && isValidReadingNote(incoming())
+        && incoming().ownerId == existing().ownerId
+        && incoming().bookId == existing().bookId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          incoming().diff(existing()).affectedKeys().hasOnly(['page', 'quote', 'memo', 'updatedAt'])
+          || incoming().diff(existing()).affectedKeys().hasOnly(['isPublic', 'ownerName', 'bookTitle', 'updatedAt'])
+        );
+      allow delete: if isVerifiedUser()
+        && isValidId(noteId)
+        && existing().ownerId == request.auth.uid;
+    }
+
+    match /reviews/{reviewId} {
+      allow get: if isValidId(reviewId) && (existing().isPublic == true || (isSignedIn() && existing().ownerId == request.auth.uid));
+      allow list: if existing().isPublic == true || (isSignedIn() && existing().ownerId == request.auth.uid);
+      allow create: if isVerifiedUser()
+        && isValidId(reviewId)
+        && isValidBookReview(incoming())
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && (
+          (exists(/databases/$(database)/documents/books/$(incoming().bookId))
+            && get(/databases/$(database)/documents/books/$(incoming().bookId)).data.ownerId == request.auth.uid
+            && get(/databases/$(database)/documents/books/$(incoming().bookId)).data.status == '완독')
+          || (existsAfter(/databases/$(database)/documents/books/$(incoming().bookId))
+            && getAfter(/databases/$(database)/documents/books/$(incoming().bookId)).data.ownerId == request.auth.uid
+            && getAfter(/databases/$(database)/documents/books/$(incoming().bookId)).data.status == '완독')
+        );
+      allow update: if isVerifiedUser()
+        && isValidId(reviewId)
+        && existing().ownerId == request.auth.uid
+        && isValidBookReview(incoming())
+        && incoming().ownerId == existing().ownerId
+        && incoming().bookId == existing().bookId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'rating', 'summary', 'pros', 'cons', 'finalThought', 'updatedDate', 'updatedAt'
+          ])
+          || incoming().diff(existing()).affectedKeys().hasOnly(['isPublic', 'ownerName', 'bookTitle', 'bookAuthor', 'updatedAt'])
+        );
+      allow delete: if isVerifiedUser()
+        && isValidId(reviewId)
+        && existing().ownerId == request.auth.uid;
+    }
+  }
+}

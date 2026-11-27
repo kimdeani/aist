@@ -1,0 +1,357 @@
+{
+  "entities": {
+    "UserPrivate": {
+      "title": "UserPrivate",
+      "description": "Private user account record isolating PII such as email.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "maxLength": 160
+        },
+        "displayName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 50
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["uid", "email", "displayName", "createdAt", "updatedAt"]
+    },
+    "PublicProfile": {
+      "title": "PublicProfile",
+      "description": "Public reader profile without PII, used to browse other readers' bookshelves.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "displayName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 50
+        },
+        "bio": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "isPublic": {
+          "type": "boolean"
+        },
+        "bookCount": {
+          "type": "integer"
+        },
+        "completedCount": {
+          "type": "integer"
+        },
+        "reviewCount": {
+          "type": "integer"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "userId",
+        "displayName",
+        "bio",
+        "isPublic",
+        "bookCount",
+        "completedCount",
+        "reviewCount",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Book": {
+      "title": "Book",
+      "description": "A book selected, tracked, and completed by a reader.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ownerName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 50
+        },
+        "isPublic": {
+          "type": "boolean"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "author": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "category": {
+          "type": "string",
+          "maxLength": 60
+        },
+        "totalPages": {
+          "type": "integer"
+        },
+        "reason": {
+          "type": "string",
+          "maxLength": 1000
+        },
+        "priority": {
+          "type": "string",
+          "enum": ["높음", "보통", "낮음"]
+        },
+        "coverTone": {
+          "type": "string",
+          "enum": ["slate", "cobalt", "charcoal", "stone"]
+        },
+        "coverImage": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "status": {
+          "type": "string",
+          "enum": ["읽기 전", "읽는 중", "완독"]
+        },
+        "startDate": {
+          "type": "string",
+          "maxLength": 20
+        },
+        "endDate": {
+          "type": "string",
+          "maxLength": 20
+        },
+        "currentPage": {
+          "type": "integer"
+        },
+        "createdDate": {
+          "type": "string",
+          "maxLength": 20
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "ownerName",
+        "isPublic",
+        "title",
+        "author",
+        "category",
+        "totalPages",
+        "reason",
+        "priority",
+        "coverTone",
+        "status",
+        "startDate",
+        "endDate",
+        "currentPage",
+        "createdDate",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "ReadingNote": {
+      "title": "ReadingNote",
+      "description": "A reading quote, memo, and page record linked to a book.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ownerName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 50
+        },
+        "isPublic": {
+          "type": "boolean"
+        },
+        "bookId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "bookTitle": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "page": {
+          "type": "integer"
+        },
+        "quote": {
+          "type": "string",
+          "maxLength": 2000
+        },
+        "memo": {
+          "type": "string",
+          "maxLength": 4000
+        },
+        "createdDate": {
+          "type": "string",
+          "maxLength": 20
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "ownerName",
+        "isPublic",
+        "bookId",
+        "bookTitle",
+        "quote",
+        "memo",
+        "createdDate",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "BookReview": {
+      "title": "BookReview",
+      "description": "A final review and 1-5 star rating for a completed book.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ownerName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 50
+        },
+        "isPublic": {
+          "type": "boolean"
+        },
+        "bookId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "bookTitle": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "bookAuthor": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "rating": {
+          "type": "integer"
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 300
+        },
+        "pros": {
+          "type": "string",
+          "maxLength": 1500
+        },
+        "cons": {
+          "type": "string",
+          "maxLength": 1500
+        },
+        "finalThought": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 5000
+        },
+        "updatedDate": {
+          "type": "string",
+          "maxLength": 20
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "ownerName",
+        "isPublic",
+        "bookId",
+        "bookTitle",
+        "bookAuthor",
+        "rating",
+        "summary",
+        "pros",
+        "cons",
+        "finalThought",
+        "updatedDate",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserPrivate" },
+      "description": "Private user account records containing email."
+    },
+    "/publicProfiles/{userId}": {
+      "schema": { "$ref": "#/entities/PublicProfile" },
+      "description": "Public reader profiles for community browsing."
+    },
+    "/books/{bookId}": {
+      "schema": { "$ref": "#/entities/Book" },
+      "description": "Books registered by readers with visibility control."
+    },
+    "/notes/{noteId}": {
+      "schema": { "$ref": "#/entities/ReadingNote" },
+      "description": "Reading quotes and memos linked to registered books."
+    },
+    "/reviews/{reviewId}": {
+      "schema": { "$ref": "#/entities/BookReview" },
+      "description": "Final reviews and star ratings for completed books."
+    }
+  }
+}

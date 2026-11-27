@@ -1,15 +1,18 @@
-import { Plus } from 'lucide-react';
+import { LogIn, Plus } from 'lucide-react';
 import { TabId } from '../types/readlog';
 
 interface TopBarProps {
   activeTab: TabId;
   onSelectTab: (tab: TabId) => void;
   onOpenRegisterModal: () => void;
+  onSignIn: () => void;
+  isSignedIn: boolean;
   counts: {
     selection: number;
     notes: number;
     history: number;
     review: number;
+    explore: number;
   };
 }
 
@@ -18,9 +21,17 @@ const TABS: { id: TabId; label: string }[] = [
   { id: 'notes', label: '감상 기록' },
   { id: 'history', label: '독서 이력 관리' },
   { id: 'review', label: '리뷰' },
+  { id: 'explore', label: '서재 구경' },
 ];
 
-export function TopBar({ activeTab, onSelectTab, onOpenRegisterModal, counts }: TopBarProps) {
+export function TopBar({
+  activeTab,
+  onSelectTab,
+  onOpenRegisterModal,
+  onSignIn,
+  isSignedIn,
+  counts,
+}: TopBarProps) {
   return (
     <header className="sticky top-0 z-30 border-b border-zinc-200 bg-white/95 backdrop-blur-sm">
       <div className="mx-auto flex max-w-[1200px] items-center justify-between gap-8 px-4 sm:px-6 lg:px-8 h-16">
@@ -33,8 +44,8 @@ export function TopBar({ activeTab, onSelectTab, onOpenRegisterModal, counts }: 
           READLOG
         </button>
 
-        {/* Zone 2: 4 concise single-line navigation tabs (desktop) */}
-        <nav aria-label="주요 기능 탭" className="hidden md:flex items-center gap-8 h-full">
+        {/* Zone 2: 5 concise single-line navigation tabs (desktop) */}
+        <nav aria-label="주요 기능 탭" className="hidden md:flex items-center gap-7 h-full">
           {TABS.map((tab) => {
             const isActive = activeTab === tab.id;
             const count = counts[tab.id];
@@ -49,12 +60,11 @@ export function TopBar({ activeTab, onSelectTab, onOpenRegisterModal, counts }: 
                 }`}
               >
                 <span>{tab.label}</span>
-                <span className="font-mono-num text-xs text-zinc-400">({count})</span>
+                {tab.id !== 'explore' && (
+                  <span className="font-mono-num text-xs text-zinc-400">({count})</span>
+                )}
                 {isActive && (
-                  <span
-                    className="absolute inset-x-0 bottom-0 h-[2px] bg-[#1E40AF]"
-                    aria-hidden="true"
-                  />
+                  <span className="absolute inset-x-0 bottom-0 h-[2px] bg-[#1E40AF]" aria-hidden="true" />
                 )}
               </button>
             );
@@ -63,14 +73,25 @@ export function TopBar({ activeTab, onSelectTab, onOpenRegisterModal, counts }: 
 
         {/* Zone 3: Single primary action */}
         <div className="flex items-center shrink-0">
-          <button
-            type="button"
-            onClick={onOpenRegisterModal}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-[#1E40AF] px-4 py-2 text-xs sm:text-sm font-medium text-white whitespace-nowrap shrink-0 cursor-pointer transition-colors duration-150 hover:bg-[#1E3A8A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E40AF] focus-visible:ring-offset-2"
-          >
-            <Plus className="h-4 w-4" aria-hidden="true" />
-            <span>책 등록</span>
-          </button>
+          {isSignedIn ? (
+            <button
+              type="button"
+              onClick={onOpenRegisterModal}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-[#1E40AF] px-4 py-2 text-xs sm:text-sm font-medium text-white whitespace-nowrap shrink-0 cursor-pointer transition-colors duration-150 hover:bg-[#1E3A8A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E40AF] focus-visible:ring-offset-2"
+            >
+              <Plus className="h-4 w-4" aria-hidden="true" />
+              <span>책 등록</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={onSignIn}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-[#1E40AF] px-4 py-2 text-xs sm:text-sm font-medium text-white whitespace-nowrap shrink-0 cursor-pointer transition-colors duration-150 hover:bg-[#1E3A8A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E40AF] focus-visible:ring-offset-2"
+            >
+              <LogIn className="h-4 w-4" aria-hidden="true" />
+              <span>Google 로그인</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -92,7 +113,9 @@ export function TopBar({ activeTab, onSelectTab, onOpenRegisterModal, counts }: 
               }`}
             >
               <span>{tab.label}</span>
-              <span className="font-mono-num text-[11px] text-zinc-400">({counts[tab.id]})</span>
+              {tab.id !== 'explore' && (
+                <span className="font-mono-num text-[11px] text-zinc-400">({counts[tab.id]})</span>
+              )}
               {isActive && (
                 <span className="absolute inset-x-0 bottom-0 h-[2px] bg-[#1E40AF]" aria-hidden="true" />
               )}

@@ -4,10 +4,12 @@
  */
 
 import { useState } from 'react';
-import { ArrowRight, X } from 'lucide-react';
+import { ArrowRight, LogIn, UserCheck, X } from 'lucide-react';
 import { BookRegisterModal } from './components/BookRegisterModal';
+import { ProfileModal } from './components/ProfileModal';
 import { TopBar } from './components/TopBar';
 import { BookSelectionTab } from './components/tabs/BookSelectionTab';
+import { ExploreLibrariesTab } from './components/tabs/ExploreLibrariesTab';
 import { ReadingHistoryTab } from './components/tabs/ReadingHistoryTab';
 import { ReadingNotesTab } from './components/tabs/ReadingNotesTab';
 import { ReviewTab } from './components/tabs/ReviewTab';
@@ -23,6 +25,16 @@ interface ToastBanner {
 
 export default function App() {
   const {
+    user,
+    authReady,
+    authError,
+    profile,
+    cloudLoaded,
+    localBookCount,
+    signInWithGoogle,
+    signOutUser,
+    updateProfile,
+    importLocalToCloud,
     books,
     notes,
     reviews,
@@ -42,6 +54,9 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<TabId>('selection');
   const [focusedBookId, setFocusedBookId] = useState<string | null>(null);
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [dismissedMigration, setDismissedMigration] = useState(false);
+  const [migrating, setMigrating] = useState(false);
   const [toast, setToast] = useState<ToastBanner | null>(null);
 
   const handleNavigateTab = (tab: TabId, bookId?: string) => {
@@ -73,9 +88,7 @@ export default function App() {
     }
   };
 
-  const handleBatchRegister = (
-    items: Parameters<typeof addBooksBatch>[0],
-  ) => {
+  const handleBatchRegister = (items: Parameters<typeof addBooksBatch>[0]) => {
     const created = addBooksBatch(items);
     if (created.length === 0) return;
     setActiveTab('selection');
@@ -90,6 +103,8 @@ export default function App() {
   };
 
   const completedCount = books.filter((b) => b.status === '완독').length;
+  const showMigrationOffer =
+    Boolean(user) && cloudLoaded && books.length === 0 && localBookCount > 0 && !dismissedMigration;
 
   return (
     <div className="min-h-screen flex flex-col bg-[#FAFAFA] text-zinc-900">
@@ -97,22 +112,109 @@ export default function App() {
         activeTab={activeTab}
         onSelectTab={(tab) => handleNavigateTab(tab)}
         onOpenRegisterModal={() => setIsRegisterModalOpen(true)}
+        onSignIn={signInWithGoogle}
+        isSignedIn={Boolean(user)}
         counts={{
           selection: books.length,
           notes: notes.length,
           history: books.length,
           review: completedCount,
+          explore: 0,
         }}
       />
 
       <main className="mx-auto w-full max-w-[1200px] flex-1 px-4 py-8 sm:px-6 lg:px-8">
-        {/* Personal Book Space Kicker */}
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-2 text-xs text-zinc-500">
-          <span className="tracking-[0.16em] font-medium text-zinc-500">MY PERSONAL BOOK SPACE</span>
-          <span className="font-mono-num text-zinc-400">
-            선정 {books.length} · 감상 {notes.length} · 완독 {completedCount} · 리뷰 {reviews.length}
-          </span>
+        {/* Personal Book Space & Account Strip */}
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 text-xs text-zinc-500">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <span className="tracking-[0.16em] font-medium text-zinc-500">MY PERSONAL BOOK SPACE</span>
+            <span aria-hidden="true" className="text-zinc-300">/</span>
+            <span className="font-mono-num text-zinc-400">
+              선정 {books.length} · 감상 {notes.length} · 완독 {completedCount} · 리뷰 {reviews.length}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-3 shrink-0">
+            {!authReady ? (
+              <span className="text-zinc-400">계정 확인 중...</span>
+            ) : user ? (
+              <>
+                <span className="inline-flex items-center gap-1.5 text-zinc-700 font-medium">
+                  <UserCheck className="h-3.5 w-3.5 text-[#1E40AF]" />
+                  <span>{profile?.displayName || user.displayName || '내 계정'}</span>
+                </span>
+                <span aria-hidden="true" className="text-zinc-300">·</span>
+                <span className={profile?.isPublic ? 'text-emerald-700 font-medium' : 'text-zinc-500'}>
+                  {profile?.isPublic ? '서재 공개중' : '비공개'}
+                </span>
+                <span aria-hidden="true" className="text-zinc-300">·</span>
+                <button
+                  type="button"
+                  onClick={() => setIsProfileModalOpen(true)}
+                  className="font-medium text-[#1E40AF] hover:underline cursor-pointer"
+                >
+                  계정·공개 설정
+                </button>
+              </>
+            ) : (
+              <div className="flex items-center gap-2">
+                <span>로컬 체험 모드</span>
+                <span aria-hidden="true" className="text-zinc-300">·</span>
+                <button
+                  type="button"
+                  onClick={signInWithGoogle}
+                  className="inline-flex items-center gap-1 font-medium text-[#1E40AF] hover:underline cursor-pointer"
+                >
+                  <LogIn className="h-3.5 w-3.5" />
+                  <span>Google 로그인으로 내 서재 동기화</span>
+                </button>
+              </div>
+            )}
+          </div>
         </div>
+
+        {authError && (
+          <div
+            role="alert"
+            className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-700"
+          >
+            {authError}
+          </div>
+        )}
+
+        {/* First-time local-to-cloud migration prompt */}
+        {showMigrationOffer && (
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-white px-4 py-3 text-xs text-zinc-800">
+            <span>
+              로그인 전 브라우저에 저장된 도서 기록 <strong className="font-mono-num">{localBookCount}권</strong>이 있습니다. 내 계정 클라우드 서재로 가져올까요?
+            </span>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => setDismissedMigration(true)}
+                className="rounded-lg border border-zinc-200 px-3 py-1.5 text-xs font-medium text-zinc-600 hover:bg-zinc-50 cursor-pointer"
+              >
+                건너뛰기
+              </button>
+              <button
+                type="button"
+                disabled={migrating}
+                onClick={async () => {
+                  setMigrating(true);
+                  const count = await importLocalToCloud();
+                  setMigrating(false);
+                  setDismissedMigration(true);
+                  setToast({
+                    message: `${count}권의 도서와 감상·리뷰를 내 계정으로 가져왔습니다.`,
+                  });
+                }}
+                className="rounded-lg bg-[#1E40AF] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#1E3A8A] disabled:opacity-60 cursor-pointer"
+              >
+                {migrating ? '가져오는 중...' : '내 계정에 가져오기'}
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Cross-tab feedback banner */}
         {toast && (
@@ -149,7 +251,7 @@ export default function App() {
           </div>
         )}
 
-        {/* 4 Independent Functional Tabs */}
+        {/* 5 Independent Functional Tabs */}
         {activeTab === 'selection' && (
           <BookSelectionTab
             books={books}
@@ -196,6 +298,23 @@ export default function App() {
             onNavigateTab={(tab) => handleNavigateTab(tab)}
           />
         )}
+
+        {activeTab === 'explore' && (
+          <ExploreLibrariesTab
+            currentUserId={user?.uid}
+            myBooks={books}
+            onSignIn={signInWithGoogle}
+            onAddBookFromCommunity={(input) => {
+              const created = addBook(input);
+              setToast({
+                message: `『${created.title}』을(를) 내 책 선정 목록에 담았습니다.`,
+                actionLabel: '책 선정에서 보기',
+                targetTab: 'selection',
+              });
+            }}
+            onOpenProfileModal={() => setIsProfileModalOpen(true)}
+          />
+        )}
       </main>
 
       <footer className="border-t border-zinc-200 bg-white">
@@ -219,6 +338,15 @@ export default function App() {
           });
         }}
         onRegisterBatch={handleBatchRegister}
+      />
+
+      <ProfileModal
+        isOpen={isProfileModalOpen}
+        profile={profile}
+        email={user?.email || null}
+        onClose={() => setIsProfileModalOpen(false)}
+        onSave={updateProfile}
+        onSignOut={signOutUser}
       />
     </div>
   );
